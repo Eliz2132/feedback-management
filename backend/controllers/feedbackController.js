@@ -1,73 +1,13 @@
 const mongoose = require('mongoose');
-
-const feedbackSchema = new mongoose.Schema(
-  {
-    courseId: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    courseName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    courseDuration: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    comments: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 5,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-feedbackSchema.pre('save', function (next) {
-  if (!this.courseId) {
-    const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
-    this.courseId = `COURSE-${Date.now()}-${randomPart}`;
-  }
-
-  this.courseName = this.courseName.trim();
-  this.courseDuration = this.courseDuration.trim();
-  this.comments = this.comments.trim();
-
-  next();
-});
-
-const Feedback = mongoose.model('Feedback', feedbackSchema);
+const Feedback = require('../models/Feedback');
 
 const validateFeedbackData = (data) => {
   const { courseName, courseDuration, comments, rating } = data;
 
-  if (!courseName || !courseName.trim()) {
-    return 'Course name is required.';
-  }
-
-  if (!courseDuration || !courseDuration.trim()) {
-    return 'Course duration is required.';
-  }
-
-  if (!comments || !comments.trim()) {
-    return 'Feedback comments are required.';
-  }
-
-  if (rating === undefined || rating === null || rating === '') {
-    return 'Feedback rating is required.';
-  }
+  if (!courseName || !courseName.trim()) return 'Course name is required.';
+  if (!courseDuration || !courseDuration.trim()) return 'Course duration is required.';
+  if (!comments || !comments.trim()) return 'Feedback comments are required.';
+  if (rating === undefined || rating === null || rating === '') return 'Feedback rating is required.';
 
   const ratingValue = Number(rating);
   if (Number.isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
@@ -80,18 +20,9 @@ const validateFeedbackData = (data) => {
 const getAllFeedback = async (req, res) => {
   try {
     const feedbackList = await Feedback.find().sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: feedbackList.length,
-      data: feedbackList,
-    });
+    res.status(200).json({ success: true, count: feedbackList.length, data: feedbackList });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching feedback data.',
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: 'Error fetching feedback data.', error: error.message });
   }
 };
 
@@ -99,43 +30,25 @@ const getFeedbackById = async (req, res) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid feedback ID.',
-    });
+    return res.status(400).json({ success: false, message: 'Invalid feedback ID.' });
   }
 
   try {
     const feedback = await Feedback.findById(id);
-
     if (!feedback) {
-      return res.status(404).json({
-        success: false,
-        message: 'Feedback record not found.',
-      });
+      return res.status(404).json({ success: false, message: 'Feedback record not found.' });
     }
 
-    return res.status(200).json({
-      success: true,
-      data: feedback,
-    });
+    return res.status(200).json({ success: true, data: feedback });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error fetching selected feedback.',
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: 'Error fetching selected feedback.', error: error.message });
   }
 };
 
 const createFeedback = async (req, res) => {
   const validationError = validateFeedbackData(req.body);
-
   if (validationError) {
-    return res.status(400).json({
-      success: false,
-      message: validationError,
-    });
+    return res.status(400).json({ success: false, message: validationError });
   }
 
   try {
@@ -146,17 +59,9 @@ const createFeedback = async (req, res) => {
       rating: Number(req.body.rating),
     });
 
-    return res.status(201).json({
-      success: true,
-      message: 'Feedback created successfully.',
-      data: newFeedback,
-    });
+    return res.status(201).json({ success: true, message: 'Feedback created successfully.', data: newFeedback });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error creating feedback.',
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: 'Error creating feedback.', error: error.message });
   }
 };
 
@@ -164,18 +69,12 @@ const updateFeedback = async (req, res) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid feedback ID.',
-    });
+    return res.status(400).json({ success: false, message: 'Invalid feedback ID.' });
   }
 
   const validationError = validateFeedbackData(req.body);
   if (validationError) {
-    return res.status(400).json({
-      success: false,
-      message: validationError,
-    });
+    return res.status(400).json({ success: false, message: validationError });
   }
 
   try {
@@ -191,23 +90,12 @@ const updateFeedback = async (req, res) => {
     );
 
     if (!updatedFeedback) {
-      return res.status(404).json({
-        success: false,
-        message: 'Feedback record not found.',
-      });
+      return res.status(404).json({ success: false, message: 'Feedback record not found.' });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Feedback updated successfully.',
-      data: updatedFeedback,
-    });
+    return res.status(200).json({ success: true, message: 'Feedback updated successfully.', data: updatedFeedback });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error updating feedback.',
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: 'Error updating feedback.', error: error.message });
   }
 };
 
@@ -215,39 +103,22 @@ const deleteFeedback = async (req, res) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid feedback ID.',
-    });
+    return res.status(400).json({ success: false, message: 'Invalid feedback ID.' });
   }
 
   try {
     const deletedFeedback = await Feedback.findByIdAndDelete(id);
-
     if (!deletedFeedback) {
-      return res.status(404).json({
-        success: false,
-        message: 'Feedback record not found.',
-      });
+      return res.status(404).json({ success: false, message: 'Feedback record not found.' });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Feedback deleted successfully.',
-      data: deletedFeedback,
-    });
+    return res.status(200).json({ success: true, message: 'Feedback deleted successfully.', data: deletedFeedback });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error deleting feedback.',
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: 'Error deleting feedback.', error: error.message });
   }
 };
 
 module.exports = {
-  Feedback,
-  validateFeedbackData,
   getAllFeedback,
   getFeedbackById,
   createFeedback,

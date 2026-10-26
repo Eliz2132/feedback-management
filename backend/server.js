@@ -36,7 +36,6 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.message);
-
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Something went wrong on the server.',
@@ -46,7 +45,6 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await connectDB();
-
     app.listen(PORT, () => {
       console.log(`Backend server running on http://localhost:${PORT}`);
       console.log('MongoDB Atlas connection established successfully.');

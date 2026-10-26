@@ -1,23 +1,40 @@
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
-  const mongoUri = process.env.MONGO_URI;
+const feedbackSchema = new mongoose.Schema(
+  {
+    courseName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    courseDuration: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    comments: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    courseId: {
+      type: String,
+      unique: true,
+      trim: true,
+      default: function () {
+        return `COURSE-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      },
+    },
+  },
+  { timestamps: true }
+);
 
-  if (!mongoUri) {
-    throw new Error('MONGO_URI is missing. Please add it to the backend .env file.');
-  }
+const Feedback = mongoose.model('Feedback', feedbackSchema);
 
-  try {
-    const connection = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 10000,
-    });
-
-    console.log(`MongoDB connected: ${connection.connection.host}`);
-    return connection;
-  } catch (error) {
-    console.error('MongoDB connection failed:', error.message);
-    throw error;
-  }
-};
-
-module.exports = connectDB;
+module.exports = Feedback;
