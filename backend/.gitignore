@@ -1,0 +1,165 @@
+# Feedback Management Admin Panel
+
+A simple MERN Stack admin panel for managing course feedback records. This project includes a Node.js + Express backend, MongoDB Atlas integration, and a React + Vite frontend dashboard for viewing, adding, updating, and deleting feedback.
+
+## Features
+- Admin dashboard with course feedback table
+- Add new feedback form
+- Update existing feedback records
+- Delete records with confirmation
+- Responsive UI for desktop, tablet, and mobile
+- MongoDB Atlas connectivity using Mongoose
+- API validation for required fields and rating range
+
+## Tech Stack
+- Frontend: React, Vite, React Router
+- Backend: Node.js, Express.js, Mongoose
+- Database: MongoDB Atlas
+
+## Project Structure
+```text
+feedback-management/
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── package.json
+│   └── server.js
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   ├── .env.example
+│   ├── package.json
+│   ├── vite.config.js
+│   └── index.html
+├── .gitignore
+├── README.md
+└── .git
+```
+
+## Prerequisites
+- Node.js 18+
+- npm
+- MongoDB Atlas account
+- Git
+
+## Setup
+
+1. Clone the repo
+```bash
+git clone https://github.com/Eliz2132/feedback-management.git
+cd feedback-management
+```
+
+2. Install backend dependencies
+```bash
+cd backend
+npm install
+```
+
+3. Install frontend dependencies
+```bash
+cd ../frontend
+npm install
+```
+
+## Environment Variables
+
+### Backend
+Create `backend/.env` from the example:
+```bash
+cp backend/.env.example backend/.env
+```
+
+Update it with your MongoDB Atlas connection:
+```env
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/feedbackDb?retryWrites=true&w=majority
+PORT=5000
+CLIENT_URL=http://localhost:5173
+```
+
+### Frontend
+Create `frontend/.env` from the example:
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Example file:
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+## MongoDB Atlas Setup
+1. Create a MongoDB Atlas account.
+2. Create a new cluster.
+3. Create a database user with a username and password.
+4. Add your IP address to Network Access.
+5. Copy the connection string and paste it into `backend/.env`.
+
+Use a test database only for exam work. Do not commit real secrets to GitHub.
+
+## Start the app
+
+### Backend
+```bash
+cd backend
+npm run dev
+```
+
+### Frontend
+```bash
+cd frontend
+npm run dev
+```
+
+The app will run on:
+- Frontend: http://localhost:5173
+- Backend: http://localhost:5000
+
+## API Endpoints
+```text
+GET /api/health
+GET /api/feedback
+GET /api/feedback/:id
+POST /api/feedback
+PUT /api/feedback/:id
+DELETE /api/feedback/:id
+```
+
+## Example API Request
+```bash
+curl http://localhost:5000/api/health
+```
+
+```bash
+curl -X POST http://localhost:5000/api/feedback \
+  -H "Content-Type: application/json" \
+  -d '{
+    "courseName": "Web Development",
+    "courseDuration": "6 Weeks",
+    "comments": "Very helpful course.",
+    "rating": 5
+  }'
+```
+
+## Testing
+- Start backend and confirm MongoDB connection.
+- Check health endpoint.
+- Add, update, and delete feedback using the dashboard or API.
+- Confirm frontend navigation works between Dashboard and Add Feedback.
+- Run production build for frontend:
+```bash
+cd frontend
+npm run build
+```
+
+## Screenshots
+Placeholder screenshots will be added later.
+
+## Notes
+- This is a beginner-friendly implementation built for a MERN stack exam assignment.
+- Real credentials should never be stored in the repository.
+- The app focuses on required CRUD functionality and responsive UI.
