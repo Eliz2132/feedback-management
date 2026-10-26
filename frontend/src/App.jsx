@@ -1,13 +1,23 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
-import './App.css';
+import { Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Dashboard from './pages/Dashboard';
+import AddFeedback from './pages/AddFeedback';
+import EditFeedback from './pages/EditFeedback';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
+function App() {
+  return (
+    <div className="app-shell">
+      <Navbar />
+
+      <main className="page-wrapper">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/add-feedback" element={<AddFeedback />} />
+          <Route path="/edit/:id" element={<EditFeedback />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+export default App;

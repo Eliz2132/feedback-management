@@ -1,120 +1,165 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { deleteFeedback, getAllFeedback } from '../services/feedbackService';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { createFeedback } from '../services/feedbackService';
 
-function Dashboard() {
-  const [feedbackList, setFeedbackList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+const initialForm = {
+  courseName: '',
+  courseDuration: '',
+  comments: '',
+  rating: '5',
+};
 
-  const loadFeedback = async () => {
-    try {
-      setLoading(true);
-      setError('');
+function AddFeedback() {
+  const [formData, setFormData] = useState(initialForm);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const navigate = useNavigate();
 
-      const response = await getAllFeedback();
-      setFeedbackList(response.data || []);
-    } catch (err) {
-      setError(err.message || 'Could not load feedback data.');
-    } finally {
-      setLoading(false);
-    }
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  useEffect(() => {
-    loadFeedback();
-  }, []);
+  const validateForm = () => {
+    const nextErrors = {};
 
-  const handleDelete = async (id) => {
-    const shouldDelete = window.confirm('Are you sure you want to delete this feedback record?');
+    if (!formData.courseName.trim()) {
+      nextErrors.courseName = 'Course name is required.';
+    }
 
-    if (!shouldDelete) {
+    if (!formData.courseDuration.trim()) {
+      nextErrors.courseDuration = 'Course duration is required.';
+    }
+
+    if (!formData.comments.trim()) {
+      nextErrors.comments = 'Feedback comments are required.';
+    }
+
+    const numericRating = Number(formData.rating);
+    if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
+      nextErrors.rating = 'Rating must be between 1 and 5.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
 
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
     try {
-      await deleteFeedback(id);
-      await loadFeedback();
+      await createFeedback({
+        courseName: formData.courseName,
+        courseDuration: formData.courseDuration,
+        comments: formData.comments,
+        rating: Number(formData.rating),
+      });
+
+      setSubmitMessage('Feedback saved successfully!');
+      setFormData(initialForm);
+
+      setTimeout(() => {
+        navigate('/');
+      }, 600);
     } catch (err) {
-      setError(err.message || 'Failed to delete the feedback record.');
+      setSubmitMessage(err.message || 'Failed to save feedback.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const renderRating = (rating) => {
-    const safeRating = Number(rating) || 0;
-    const filledStars = '★'.repeat(Math.max(0, safeRating));
-    const emptyStars = '☆'.repeat(Math.max(0, 5 - safeRating));
-
-    return (
-      <span className="rating-text" title={`${safeRating}/5`}>
-        {filledStars}{emptyStars} <span className="rating-number">{safeRating}/5</span>
-      </span>
-    );
-  };
-
-  if (loading) {
-    return <div className="status-card">Loading feedback records...</div>;
-  }
-
-  if (error) {
-    return <div className="status-card error">{error}</div>;
-  }
-
   return (
-    <section className="card dashboard-card">
+    <section className="card form-card">
       <div className="section-header">
         <div>
-          <p className="eyebrow">Overview</p>
-          <h2>Course Feedback Dashboard</h2>
+          <p className="eyebrow">Manage</p>
+          <h2>Add Feedback</h2>
         </div>
       </div>
 
-      {feedbackList.length === 0 ? (
-        <div className="empty-state">
-          <p>No feedback has been submitted yet.</p>
-        </div>
-      ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Course ID</th>
-                <th>Course Name</th>
-                <th>Course Duration</th>
-                <th>Overall Feedback Rating</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {feedbackList.map((item) => (
-                <tr key={item._id}>
-                  <td>{item.courseId || 'N/A'}</td>
-                  <td>{item.courseName || 'Unknown Course'}</td>
-                  <td>{item.courseDuration || 'Not provided'}</td>
-                  <td>{renderRating(item.rating)}</td>
-                  <td>
-                    <div className="action-group">
-                      <Link to={`/edit/${item._id}`} className="button secondary-button small-button">
-                        Update
-                      </Link>
+      <form onSubmit={handleSubmit} className="feedback-form">
+        <div className="form-grid">
+          <div className="form-field">
+            <label htmlFor="courseName">Course Name</label>
+            <input
+              id="courseName"
+              name="courseName"
+              type="text"
+              value={formData.courseName}
+              onChange={handleChange}
+              placeholder="e.g. Full Stack Development"
+            />
+            {errors.courseName && <small className="error-text">{errors.courseName}</small>}
+          </div>
 
-                      <button
-                        type="button"
-                        className="button danger-button small-button"
-                        onClick={() => handleDelete(item._id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="form-field">
+            <label htmlFor="courseDuration">Course Duration</label>
+            <input
+              id="courseDuration"
+              name="courseDuration"
+              type="text"
+              value={formData.courseDuration}
+              onChange={handleChange}
+              placeholder="e.g. 4 Weeks"
+            />
+            {errors.courseDuration && <small className="error-text">{errors.courseDuration}</small>}
+          </div>
+
+          <div className="form-field full-width">
+            <label htmlFor="comments">Feedback Comments</label>
+            <textarea
+              id="comments"
+              name="comments"
+              rows="5"
+              value={formData.comments}
+              onChange={handleChange}
+              placeholder="Describe the course experience..."
+            ></textarea>
+            {errors.comments && <small className="error-text">{errors.comments}</small>}
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="rating">Feedback Rating</label>
+            <select id="rating" name="rating" value={formData.rating} onChange={handleChange}>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+            {errors.rating && <small className="error-text">{errors.rating}</small>}
+          </div>
         </div>
-      )}
+
+        {submitMessage && (
+          <div className={submitMessage.includes('successfully') ? 'success-message' : 'error-message'}>
+            {submitMessage}
+          </div>
+        )}
+
+        <div className="form-actions">
+          <button type="submit" className="button primary-button" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Submit'}
+          </button>
+
+          <Link to="/" className="button secondary-button">
+            Back to Dashboard
+          </Link>
+        </div>
+      </form>
     </section>
   );
 }
 
-export default Dashboard;
+export default AddFeedback;

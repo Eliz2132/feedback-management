@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { createFeedback } from '../services/feedbackService';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { getFeedbackById, updateFeedback } from '../services/feedbackService';
 
 const initialForm = {
   courseName: '',
@@ -9,82 +9,77 @@ const initialForm = {
   rating: '5',
 };
 
-function AddFeedback() {
-  const [formData, setFormData] = useState(initialForm);
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState('');
+function EditFeedback() {
+  const { id } = useParams();
   const navigate = useNavigate();
+
+  const [formData, setFormData] = useState(initialForm);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadFeedback = async () => {
+      try {
+        const data = await getFeedbackById(id);
+        const item = data.data || data;
+
+        setFormData({
+          courseName: item.courseName || '',
+          courseDuration: item.courseDuration || '',
+          comments: item.comments || '',
+          rating: String(item.rating || 5),
+        });
+      } catch (err) {
+        setError(err.message || 'Unable to load feedback details.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFeedback();
+  }, [id]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const validateForm = () => {
-    const nextErrors = {};
-
-    if (!formData.courseName.trim()) {
-      nextErrors.courseName = 'Course name is required.';
-    }
-
-    if (!formData.courseDuration.trim()) {
-      nextErrors.courseDuration = 'Course duration is required.';
-    }
-
-    if (!formData.comments.trim()) {
-      nextErrors.comments = 'Feedback comments are required.';
-    }
-
-    const numericRating = Number(formData.rating);
-    if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
-      nextErrors.rating = 'Rating must be between 1 and 5.';
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
     setIsSubmitting(true);
-    setSubmitMessage('');
+    setError('');
 
     try {
-      await createFeedback({
+      await updateFeedback(id, {
         courseName: formData.courseName,
         courseDuration: formData.courseDuration,
         comments: formData.comments,
         rating: Number(formData.rating),
       });
 
-      setSubmitMessage('Feedback saved successfully!');
-      setFormData(initialForm);
-
-      setTimeout(() => {
-        navigate('/');
-      }, 600);
+      navigate('/');
     } catch (err) {
-      setSubmitMessage(err.message || 'Failed to save feedback.');
+      setError(err.message || 'Failed to update feedback.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return <div className="status-card">Loading feedback details...</div>;
+  }
+
+  if (error) {
+    return <div className="status-card error">{error}</div>;
+  }
 
   return (
     <section className="card form-card">
       <div className="section-header">
         <div>
           <p className="eyebrow">Manage</p>
-          <h2>Add Feedback</h2>
+          <h2>Edit Feedback</h2>
         </div>
       </div>
 
@@ -98,9 +93,7 @@ function AddFeedback() {
               type="text"
               value={formData.courseName}
               onChange={handleChange}
-              placeholder="e.g. Full Stack Development"
             />
-            {errors.courseName && <small className="error-text">{errors.courseName}</small>}
           </div>
 
           <div className="form-field">
@@ -111,9 +104,7 @@ function AddFeedback() {
               type="text"
               value={formData.courseDuration}
               onChange={handleChange}
-              placeholder="e.g. 4 Weeks"
             />
-            {errors.courseDuration && <small className="error-text">{errors.courseDuration}</small>}
           </div>
 
           <div className="form-field full-width">
@@ -124,9 +115,7 @@ function AddFeedback() {
               rows="5"
               value={formData.comments}
               onChange={handleChange}
-              placeholder="Describe the course experience..."
             ></textarea>
-            {errors.comments && <small className="error-text">{errors.comments}</small>}
           </div>
 
           <div className="form-field">
@@ -138,23 +127,16 @@ function AddFeedback() {
               <option value="4">4</option>
               <option value="5">5</option>
             </select>
-            {errors.rating && <small className="error-text">{errors.rating}</small>}
           </div>
         </div>
 
-        {submitMessage && (
-          <div className={submitMessage.includes('successfully') ? 'success-message' : 'error-message'}>
-            {submitMessage}
-          </div>
-        )}
-
         <div className="form-actions">
           <button type="submit" className="button primary-button" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Submit'}
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
           </button>
 
           <Link to="/" className="button secondary-button">
-            Back to Dashboard
+            Cancel
           </Link>
         </div>
       </form>
@@ -162,4 +144,4 @@ function AddFeedback() {
   );
 }
 
-export default AddFeedback;
+export default EditFeedback;

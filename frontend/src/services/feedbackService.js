@@ -1,28 +1,53 @@
-import { NavLink } from 'react-router-dom';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-function Navbar() {
-  return (
-    <nav className="navbar">
-      <div className="nav-brand">Feedback Admin</div>
+async function handleResponse(response) {
+  const data = await response.json();
 
-      <div className="nav-links">
-        <NavLink
-          to="/"
-          className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-          end
-        >
-          Dashboard
-        </NavLink>
+  if (!response.ok) {
+    throw new Error(data.message || 'Something went wrong while contacting the server.');
+  }
 
-        <NavLink
-          to="/add-feedback"
-          className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-        >
-          Add Feedback
-        </NavLink>
-      </div>
-    </nav>
-  );
+  return data;
 }
 
-export default Navbar;
+export async function getAllFeedback() {
+  const response = await fetch(`${API_URL}/feedback`);
+  return handleResponse(response);
+}
+
+export async function getFeedbackById(id) {
+  const response = await fetch(`${API_URL}/feedback/${id}`);
+  return handleResponse(response);
+}
+
+export async function createFeedback(feedbackData) {
+  const response = await fetch(`${API_URL}/feedback`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(feedbackData),
+  });
+
+  return handleResponse(response);
+}
+
+export async function updateFeedback(id, feedbackData) {
+  const response = await fetch(`${API_URL}/feedback/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(feedbackData),
+  });
+
+  return handleResponse(response);
+}
+
+export async function deleteFeedback(id) {
+  const response = await fetch(`${API_URL}/feedback/${id}`, {
+    method: 'DELETE',
+  });
+
+  return handleResponse(response);
+}
