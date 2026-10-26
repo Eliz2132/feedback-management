@@ -1,0 +1,192 @@
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getFeedbackById, updateFeedback } from '../services/feedbackService';
+
+const emptyForm = {
+  courseName: '',
+  courseDuration: '',
+  comments: '',
+  rating: '5',
+};
+
+function EditFeedback() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState(emptyForm);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  useEffect(() => {
+    const loadFeedbackDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await getFeedbackById(id);
+
+        setFormData({
+          courseName: response.data.courseName || '',
+          courseDuration: response.data.courseDuration || '',
+          comments: response.data.comments || '',
+          rating: String(response.data.rating || 5),
+        });
+      } catch (error) {
+        setStatusMessage(error.message || 'Unable to load the selected feedback record.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFeedbackDetails();
+  }, [id]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!formData.courseName.trim()) {
+      nextErrors.courseName = 'Course name is required.';
+    }
+
+    if (!formData.courseDuration.trim()) {
+      nextErrors.courseDuration = 'Course duration is required.';
+    }
+
+    if (!formData.comments.trim()) {
+      nextErrors.comments = 'Feedback comments are required.';
+    }
+
+    const numericRating = Number(formData.rating);
+    if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
+      nextErrors.rating = 'Rating must be between 1 and 5.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatusMessage('');
+
+    try {
+      await updateFeedback(id, {
+        courseName: formData.courseName,
+        courseDuration: formData.courseDuration,
+        comments: formData.comments,
+        rating: Number(formData.rating),
+      });
+
+      setStatusMessage('Feedback updated successfully.');
+
+      setTimeout(() => {
+        navigate('/');
+      }, 400);
+    } catch (error) {
+      setStatusMessage(error.message || 'Failed to update feedback.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="status-card">Loading feedback details...</div>;
+  }
+
+  return (
+    <section className="card form-card">
+      <div className="section-header">
+        <div>
+          <p className="eyebrow">Manage</p>
+          <h2>Edit Feedback</h2>
+        </div>
+      </div>
+
+      {statusMessage && statusMessage.includes('Unable') ? (
+        <div className="error-message">{statusMessage}</div>
+      ) : null}
+
+      <form onSubmit={handleSubmit} className="feedback-form">
+        <div className="form-grid">
+          <div className="form-field">
+            <label htmlFor="courseName">Course Name</label>
+            <input
+              id="courseName"
+              name="courseName"
+              type="text"
+              value={formData.courseName}
+              onChange={handleChange}
+            />
+            {errors.courseName && <small className="error-text">{errors.courseName}</small>}
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="courseDuration">Course Duration</label>
+            <input
+              id="courseDuration"
+              name="courseDuration"
+              type="text"
+              value={formData.courseDuration}
+              onChange={handleChange}
+            />
+            {errors.courseDuration && <small className="error-text">{errors.courseDuration}</small>}
+          </div>
+
+          <div className="form-field full-width">
+            <label htmlFor="comments">Feedback Comments</label>
+            <textarea
+              id="comments"
+              name="comments"
+              rows="5"
+              value={formData.comments}
+              onChange={handleChange}
+            ></textarea>
+            {errors.comments && <small className="error-text">{errors.comments}</small>}
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="rating">Feedback Rating</label>
+            <select id="rating" name="rating" value={formData.rating} onChange={handleChange}>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+            {errors.rating && <small className="error-text">{errors.rating}</small>}
+          </div>
+        </div>
+
+        {statusMessage && !statusMessage.includes('Unable') && (
+          <div className="success-message">{statusMessage}</div>
+        )}
+
+        <div className="form-actions">
+          <button type="submit" className="button primary-button" disabled={isSubmitting}>
+            {isSubmitting ? 'Updating...' : 'Update Feedback'}
+          </button>
+
+          <Link to="/" className="button secondary-button">
+            Cancel
+          </Link>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+export default EditFeedback;
